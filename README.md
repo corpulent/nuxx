@@ -37,7 +37,7 @@ $ go get -u -d github.com/magefile/mage
 ```shell script
 
 # install from github source
-$ go install nuxx-cli
+$ go install github.com/corpulent/nuxx
 
 # install from project directory
 $ go install

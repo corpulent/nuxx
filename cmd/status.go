@@ -18,7 +18,7 @@ import (
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Get deployment or just execution status.",
+	Short: "Check deployment status.",
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		viper.BindPFlag("release-name", cmd.Flags().Lookup("release-name"))

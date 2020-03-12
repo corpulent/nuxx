@@ -24,7 +24,7 @@ var (
 
 var upCmd = &cobra.Command{
 	Use:   "up",
-	Short: "Deploy an application or run a job.",
+	Short: "Start a deployment.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := os.Stat(projectConfFile); os.IsNotExist(err) {

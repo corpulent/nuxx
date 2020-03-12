@@ -26,7 +26,7 @@ var (
 
 var composeCmd = &cobra.Command{
 	Use:   "compose",
-	Short: "Create a nuxx.json configuration file.",
+	Short: "Create a project configuration file.",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return buildProjectConfig()

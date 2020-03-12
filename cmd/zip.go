@@ -15,7 +15,7 @@ import (
 
 var zipCmd = &cobra.Command{
 	Use:   "zip",
-	Short: "Create a zip archive of your files.",
+	Short: "Zip deployment assets.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := os.Stat(projectConfFile); os.IsNotExist(err) {

@@ -15,7 +15,7 @@ import (
 
 var logsCmd = &cobra.Command{
 	Use:   "logs",
-	Short: "Retrieve service or job logs.",
+	Short: "Retrieve deployed service or job logs.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := os.Stat(projectConfFile); os.IsNotExist(err) {
