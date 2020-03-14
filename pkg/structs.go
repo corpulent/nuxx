@@ -55,14 +55,24 @@ type JobStatus struct {
 			StartedAt  string
 			FinishedAt string
 		}
+		STATUS_MESSAGES []struct {
+			Type    string
+			Reason  string
+			Message string
+		}
 	}
 }
 
 type ServiceStatus struct {
 	Resp struct {
-		Notices  []string
-		Warnings []string
-		Errors   []string
+		Notices         []string
+		Warnings        []string
+		Errors          []string
+		STATUS_MESSAGES []struct {
+			Type    string
+			Reason  string
+			Message string
+		}
 		Response struct {
 			CreationTimestamp string
 			Status            string

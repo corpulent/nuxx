@@ -11,6 +11,7 @@ import (
 	"github.com/corpulent/nuxx/pkg"
 	"github.com/corpulent/nuxx/pkg/common"
 	"github.com/fatih/color"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/thedevsaddam/gojsonq"
@@ -94,7 +95,7 @@ var statusCmd = &cobra.Command{
 				jobStatusJsonStr := fmt.Sprintf(`{"project_name": "%s", "execution_id": "%s"}`, projectName, releaseName)
 				resp := pkg.JobStatusRequest(jobStatusPathEndpoint, jobStatusJsonStr)
 
-				printAllJobResponses(resp)
+				printAllJobResponses(resp, releaseName)
 			}
 
 			if releaseKind == "service" {
@@ -113,14 +114,60 @@ func printAllServiceResponses(resp *pkg.ServiceStatus, releaseName string) {
 	p := fmt.Println
 	stringGreen := color.New(color.FgGreen, color.Bold).SprintFunc()
 	stringRed := color.New(color.FgRed, color.Bold).SprintFunc()
+	stringYellow := color.New(color.FgYellow, color.Bold).SprintFunc()
 	stringBold := color.New(color.Bold).SprintFunc()
 
+	if respResp.Response.Status != "" {
+		p(``)
+		switch status := respResp.Response.Status; status {
+		case "running":
+			serviceUpStatusString := fmt.Sprintf(`Service %s is %s`, stringBold(releaseName), stringGreen("RUNNING"))
+			p(serviceUpStatusString)
+		case "deploying":
+			deployingStatusString := fmt.Sprintf(`Service %s is %s`, stringBold(releaseName), stringYellow("DEPLOYING"))
+			p(deployingStatusString)
+		case "unhealthy":
+			unhealthyStatusString := fmt.Sprintf(`Service %s is %s`, stringBold(releaseName), stringYellow("UNHEALTHY"))
+			p(unhealthyStatusString)
+			p("The service can still be running, but it might have failed a health check.  Check the status logs below.")
+		default:
+			serviceDownStatusString := fmt.Sprintf(`Service %s state: %s`, stringBold(releaseName), stringRed(status))
+			p(serviceDownStatusString)
+		}
+	} else {
+		p(``)
+		emptyStatusString := fmt.Sprintf(`Service %s state unknown...`, stringBold(releaseName))
+		p(emptyStatusString)
+	}
+
+	if len(respResp.STATUS_MESSAGES) > 0 {
+		status_data := [][]string{}
+		p(``)
+		for _, v := range respResp.STATUS_MESSAGES {
+			status_data = append(status_data, []string{stringBold(v.Type), v.Reason, v.Message})
+		}
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{"Type", "Status", "Message"})
+		table.SetAutoWrapText(false)
+		table.SetAutoFormatHeaders(true)
+		table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+		table.SetAlignment(tablewriter.ALIGN_LEFT)
+		table.SetCenterSeparator("")
+		table.SetColumnSeparator("")
+		table.SetRowSeparator("")
+		table.SetHeaderLine(false)
+		table.SetBorder(false)
+		table.SetTablePadding("\t") // pad with tabs
+		table.SetNoWhiteSpace(true)
+		table.AppendBulk(status_data)
+		table.Render()
+	}
+
 	if len(respResp.Notices) > 0 {
 		p(``)
 		for _, v := range respResp.Notices {
 			p(v)
 		}
-		p(``)
 	}
 
 	if len(respResp.Warnings) > 0 {
@@ -128,7 +175,6 @@ func printAllServiceResponses(resp *pkg.ServiceStatus, releaseName string) {
 		for _, v := range respResp.Warnings {
 			p(v)
 		}
-		p(``)
 	}
 
 	if len(respResp.Errors) > 0 {
@@ -136,56 +182,20 @@ func printAllServiceResponses(resp *pkg.ServiceStatus, releaseName string) {
 		for _, v := range respResp.Errors {
 			p(v)
 		}
-		p(``)
 	}
-
-	if respResp.Response.Status == "running" {
-		serviceUpStatusString := fmt.Sprintf(`Service %s is %s`, stringBold(releaseName), stringGreen("RUNNING"))
-		p(``)
-		p(serviceUpStatusString)
-		p(``)
-	} else {
-		serviceDownStatusString := fmt.Sprintf(`Service %s is %s`, stringBold(releaseName), stringRed("DOWN"))
-		p(``)
-		p(serviceDownStatusString)
-		p(``)
-	}
+	p(``)
 }
 
-func printAllJobResponses(resp *pkg.JobStatus) {
+func printAllJobResponses(resp *pkg.JobStatus, releaseName string) {
 	respResp := resp.Resp
 	p := fmt.Println
-
-	if len(respResp.Notices) > 0 {
-		p(``)
-		for _, v := range respResp.Notices {
-			p(v)
-		}
-		p(``)
-	}
-
-	if len(respResp.Warnings) > 0 {
-		p(``)
-		for _, v := range respResp.Warnings {
-			p(v)
-		}
-		p(``)
-	}
-
-	if len(respResp.Errors) > 0 {
-		p(``)
-		for _, v := range respResp.Errors {
-			p(v)
-		}
-		p(``)
-	}
-
 	jobStatus := respResp.JOB_STATUS
 	exitCode := 0
 	reason := ""
 	timeLayout := time.RFC3339
 	startAtString := ""
 	endAtString := ""
+	stringBold := color.New(color.Bold).SprintFunc()
 
 	if jobStatus.ExitCode != 0 {
 		exitCode = jobStatus.ExitCode
@@ -223,7 +233,49 @@ func printAllJobResponses(resp *pkg.JobStatus) {
 		p(endAtString)
 	}
 
-	p(``)
+	if len(respResp.STATUS_MESSAGES) > 0 {
+		status_data := [][]string{}
+		p(``)
+		for _, v := range respResp.STATUS_MESSAGES {
+			status_data = append(status_data, []string{stringBold(v.Type), v.Reason, v.Message})
+		}
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{"Type", "Status", "Message"})
+		table.SetAutoWrapText(false)
+		table.SetAutoFormatHeaders(true)
+		table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+		table.SetAlignment(tablewriter.ALIGN_LEFT)
+		table.SetCenterSeparator("")
+		table.SetColumnSeparator("")
+		table.SetRowSeparator("")
+		table.SetHeaderLine(false)
+		table.SetBorder(false)
+		table.SetTablePadding("\t") // pad with tabs
+		table.SetNoWhiteSpace(true)
+		table.AppendBulk(status_data)
+		table.Render()
+	}
+
+	if len(respResp.Notices) > 0 {
+		p(``)
+		for _, v := range respResp.Notices {
+			p(v)
+		}
+	}
+
+	if len(respResp.Warnings) > 0 {
+		p(``)
+		for _, v := range respResp.Warnings {
+			p(v)
+		}
+	}
+
+	if len(respResp.Errors) > 0 {
+		p(``)
+		for _, v := range respResp.Errors {
+			p(v)
+		}
+	}
 }
 
 func init() {

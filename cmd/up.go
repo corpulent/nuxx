@@ -25,7 +25,17 @@ var (
 var upCmd = &cobra.Command{
 	Use:   "up",
 	Short: "Start a deployment.",
-	Long:  ``,
+	Long: `Common attributes:
+	
+	image: <string> Any publicly available docker image.  eg: 
+	working_dir: <string> Path to working directory. eg: "/node"
+	command: <list of strings> Entry command. eg: ["/bin/sh"]
+	args: <list of strings> Arguments to pass to the command. eg: ["-c", "node run.js"]
+	port: <string> (Service only). Port that the service accepts requests on. eg: "9001"
+	memoryRequests:
+	cpuRequests:
+	replicaCount
+	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := os.Stat(projectConfFile); os.IsNotExist(err) {
 			d := color.New(color.FgCyan, color.Bold).SprintFunc()
@@ -76,8 +86,10 @@ var upCmd = &cobra.Command{
 		fmt.Println(``)
 		upResp := upRequest(upPathEndpoint, jsonString)
 		stringCyan := color.New(color.FgCyan, color.Bold).SprintFunc()
+		stringYellow := color.New(color.FgYellow, color.Bold).SprintFunc()
 		stringGreen := color.New(color.FgGreen, color.Bold).SprintFunc()
 		stringBold := color.New(color.Bold).SprintFunc()
+		p := fmt.Println
 
 		for releaseName, v := range upResp {
 			releaseType := "service"
@@ -88,13 +100,26 @@ var upCmd = &cobra.Command{
 			statusString := fmt.Sprintf("$ nuxx status -k %s -n %s", releaseType, releaseName)
 			logsString := fmt.Sprintf("$ nuxx logs -k %s -n %s", releaseType, releaseName)
 
-			fmt.Println(strings.Title(releaseType), stringBold(releaseName), stringGreen(strings.ToUpper(v.COMMAND_RESPONSE.Status)))
-			fmt.Println(``)
-			fmt.Println(`Check status`, stringCyan(statusString))
-			fmt.Println(`View the logs`, stringCyan(logsString))
-			fmt.Println(``)
-			fmt.Println("If you are experiencing any issues with our cli, please email us at", stringCyan("support@nuxx.io"), ".")
-			fmt.Println(``)
+			p(strings.Title(releaseType), stringBold(releaseName), stringGreen(strings.ToUpper(v.COMMAND_RESPONSE.Status)))
+			p(``)
+
+			if len(v.COMMAND_RESPONSE.Notes) > 0 {
+				for _, v := range v.COMMAND_RESPONSE.Notes {
+					p(stringBold(v))
+				}
+			}
+
+			if releaseType == "service" {
+				p(``)
+				p(stringYellow("Depending on your assets bundle or image size, the service could take a bit longer to be publicly available."))
+			}
+
+			p(``)
+			p(`Check status`, stringCyan(statusString))
+			p(`View the logs`, stringCyan(logsString))
+			p(``)
+			p("If you are experiencing any issues please email us at", stringCyan("support@nuxx.io"), ".")
+			p(``)
 		}
 	},
 }
